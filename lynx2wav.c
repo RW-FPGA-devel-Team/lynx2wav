@@ -113,10 +113,16 @@ int init(int argc, char *argv[])
 		return 1;
 	for (i = 1; i < argc - 2; i++)
 	{
-		if (strcmp(argv[i], "-3") == 0)
+		if (strcmp(argv[i], "-1") == 0)
+			tape_1 = 33;
+		else if (strcmp(argv[i], "-2") == 0)
 			tape_1 = 25;
+		else if (strcmp(argv[i], "-3") == 0)
+			tape_1 = 20;
+		else if (strcmp(argv[i], "-4") == 0)
+			tape_1 = 16;
 		else if (strcmp(argv[i], "-5") == 0)
-			tape_1 = 17;
+			tape_1 = 14;
 		else
 		{
 			printf("Bad option\n\n");
@@ -147,7 +153,10 @@ int main(int argc, char *argv[])
 	if (init(argc, argv))
 	{
 		printf("Usage: %s [ -2 | -5 ] [ -N ] <.TAP file> <.WAV file>\n", argv[0]);
-		printf("Options: -2  produces a TAPE 2 WAV file\n");
+		printf("Options: -1 produces a TAPE 1 WAV file\n");
+		printf("         -2 produces a TAPE 2 WAV file\n");
+		printf("         -3 produces a TAPE 3 WAV file\n");
+		printf("         -4 produces a TAPE 4 WAV file\n");
 		printf("         -5 produces a TAPE 5 WAV file  (default is TAPE 0)\n");
 		exit(1);
 	}
