@@ -152,7 +152,7 @@ int main(int argc, char *argv[])
 
 	if (init(argc, argv))
 	{
-		printf("Usage: %s [ -2 | -5 ] [ -N ] <.TAP file> <.WAV file>\n", argv[0]);
+		printf("Usage: %s [ -N ] <.TAP file> <.WAV file>\n", argv[0]);
 		printf("Options: -1 produces a TAPE 1 WAV file\n");
 		printf("         -2 produces a TAPE 2 WAV file\n");
 		printf("         -3 produces a TAPE 3 WAV file\n");

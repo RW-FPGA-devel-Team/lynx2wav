@@ -3,7 +3,7 @@ Camputers lynx .tap to wav file for fpga and real machine.
 
 # usage:
 
-lynx2wav [ -2 | -5 ] [ -N ] <.TAP file> <.WAV file>
+lynx2wav  [ -N ] <.TAP file> <.WAV file>
 Options: -1 produces a TAPE 1 WAV file
          -2 produces a TAPE 2 WAV file
          -3 produces a TAPE 3 WAV file
