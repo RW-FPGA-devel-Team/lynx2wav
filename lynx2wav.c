@@ -12,7 +12,9 @@
 FILE *in, *out;
 int file_size;
 int speed = 22050;
-int tape_1 =50;
+int tape_1 = 50;  // TAPE 0
+int square = 0;
+
 struct
 {
 	char sig[4];
@@ -48,6 +50,39 @@ int stricmp(const char *a, const char *b)
 //static int current_level=223;
 //void inverse_level() { current_level=255-current_level; }
 
+void emit_silence(int size)
+{
+    int i;
+	
+    for (i=0;i<(size*speed);i++) {
+		     
+			  
+			  fputc(0,out);
+			  			
+	}
+	file_size+=size*speed;
+}
+
+
+
+void emit_square_level(int size, int nBit)
+{
+    int i;
+	double x, ret, val, boost;
+	int value;
+
+    for (i=0;i<size;i++) {
+		     
+			 if (i < size/2) value = 235;
+			 else value = 20; 
+              
+			  fputc(value,out);
+			  			
+	}
+	file_size+=size;
+}
+
+
 void emit_level(int size, int nBit)
 {
     int i;
@@ -60,13 +95,10 @@ void emit_level(int size, int nBit)
 			  value=(sin(x*val)*1.25);
               
 			  boost=1;
-
 			  if (nBit)
 			     boost=1.2;
 			  
-			  
 			  value=(sin(x*val)* -100 );
-              
 			  fputc((value*boost)+128,out);
 			  			
 	}
@@ -74,6 +106,8 @@ void emit_level(int size, int nBit)
 }
 
 
+void emit_standard_square_short_level() { emit_square_level(tape_1 / 2 ,0); }
+void emit_standard_square_long_level() { emit_square_level(tape_1,1);  }
 void emit_standard_short_level() { emit_level(tape_1 / 2 ,0); }
 void emit_standard_long_level() { emit_level(tape_1,1);  }
 
@@ -83,10 +117,16 @@ void emit_bit(int bit)
 	int nBit = bit;
 	if (nBit)
 	{
-		emit_standard_long_level();
+	   if (square == 0)
+		 emit_standard_long_level();
+	   else
+	     emit_standard_square_long_level();
 	}		
 		else {
-				emit_standard_short_level();
+			  if (square == 0)
+			    emit_standard_short_level();
+			  else
+				emit_standard_square_short_level();
 			}
 	
 }
@@ -104,7 +144,13 @@ void emit_byte(unsigned short n)
     
 }
 
-
+void emit_pilot()
+{
+	for (int i=0; i<128; i++)
+		emit_byte(0x00);
+	
+	emit_byte(0xA5);
+}
 
 int init(int argc, char *argv[])
 {
@@ -123,6 +169,12 @@ int init(int argc, char *argv[])
 			tape_1 = 16;
 		else if (strcmp(argv[i], "-5") == 0)
 			tape_1 = 14;
+		else if (strcmp(argv[i], "-t") == 0)
+		   {
+			tape_1 = 14;
+			square = 1;
+		   }
+		
 		else
 		{
 			printf("Bad option\n\n");
@@ -147,8 +199,10 @@ int init(int argc, char *argv[])
 
 int main(int argc, char *argv[])
 {
-	int i, size;
-	unsigned char name;
+	int i, size, total_len,address;
+	unsigned char len_h, len_l, load_h, load_l;
+	int eot=0;
+	unsigned char name,tmp_byte;
 
 	if (init(argc, argv))
 	{
@@ -168,47 +222,113 @@ int main(int argc, char *argv[])
 			{
 
 				
-				/* first pilot with 128 0x00 char */
-				for (i=0; i<128; i++)
-					emit_byte(0x00);
-
-	            /* 0xA5 for syncro */
-		
-				emit_byte(0xA5);
 				
-				/* Print and save the program name */
-				//emit_bit(0);
-                emit_byte(0x22);
-				putchar ('"');
+				while(!feof(in) && tmp_byte != '"')
+				{
+				 tmp_byte=fgetc(in);
+				 if(feof(in))
+				    break;
+				 
+				}
+                
+				if(feof(in))
+				    break;
+				 
+				emit_silence(3);
+				
+				
+                 /* first pilot with 128 0x00 char */
+				 emit_pilot();
 
-				fgetc(in);
-                while (name!='"'){
-                     name=fgetc(in);
-				     emit_byte(name);
-					 putchar(name);
+	             emit_byte (tmp_byte);
+				 printf("Program: %c",tmp_byte);
+				
+				tmp_byte=' ';
+                while (tmp_byte!='"'){
+                     tmp_byte=fgetc(in);
+					 emit_byte(tmp_byte);
+					 putchar(tmp_byte);
 				}
                 
 				
 				/* second pilot with 128 0x00 char and 0xA5*/
-				for (i=0; i<771; i++)
-					emit_byte(0x00);
-
-                emit_byte(0xA5);
+				emit_pilot();
 				
                 char tap_type  = fgetc(in);
-				printf ("Tipo: %c\n",tap_type);
+				printf (" Tipo: %c\n",tap_type);
 				emit_byte(tap_type);
 
-				/* Play until end of file */
-				while (!feof(in))
-				 {
-					 emit_byte(fgetc(in));
-				 }
+				len_h=fgetc(in);
+				emit_byte(len_h);
+				len_l=fgetc(in);
+				emit_byte(len_l);
 
-				/* Done */
-				printf("end.\n");
+				
+				 total_len = len_h | len_l << 8;
+				 printf("Tap size: %d\n",total_len);
+
+				if (tap_type == 'M')
+				   {
+					   load_h=fgetc(in);
+				       emit_byte(load_h);
+				       load_l=fgetc(in);
+				       emit_byte(load_l);
+					   address = load_h | load_l << 8;
+				       printf("Address: %d\n", address);
+
+				   }
+
+				
+				for (i=0;i<total_len;i++)
+				   emit_byte(fgetc(in));
+				
+				
+				unsigned char checksum,mistery,exec_h,exec_l;
+				int entry_point;
+
+			    if (tap_type == 'M')
+					{
+				       checksum=fgetc(in);
+					   emit_byte (checksum);
+					   printf ("Checksum: %x\n",checksum);
+
+					   mistery=fgetc(in);
+					   emit_byte(mistery);
+					   printf ("Mistery Byte: %x\n",mistery);
+
+					   
+					   exec_h=fgetc(in);
+					   emit_byte(exec_h);
+					   exec_l=fgetc(in);
+					   emit_byte(exec_l);
+					   entry_point = exec_h | exec_l << 8;
+				       printf("Entry point: %d\n", entry_point);
+					   
+
+					}
+				
+				if (tap_type == 'B')
+					
+					{
+				       exec_h=(fgetc(in));
+					   emit_byte (exec_h);
+					   exec_l=(fgetc(in));
+					   emit_byte (exec_l);
+					   entry_point = exec_h | exec_l << 8;
+				       printf("Exec Address: %d\n", entry_point);
+					}
+
+                 tmp_byte=(fgetc(in));
+				 if (tmp_byte==0)
+				   printf("Found end Block.\n");   
+
+				
+
+				/* Done block*/
+				
 			}
-		
+	
+	printf("End Tape.\n");
 	
 	fclose(in);
 
