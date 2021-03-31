@@ -57,7 +57,7 @@ void emit_silence(int size)
     for (i=0;i<(size*speed);i++) {
 		     
 			  
-			  fputc(0,out);
+			  fputc(127,out);
 			  			
 	}
 	file_size+=size*speed;
@@ -70,8 +70,8 @@ void emit_square_level(int size, int nBit)
     int i;
 	double x, ret, val, boost;
 	int value;
-
-    for (i=0;i<size;i++) {
+    fputc(0,out);
+    for (i=0;i<size-2;i++) {
 		     
 			 if (i < size/2) value = 235;
 			 else value = 20; 
@@ -79,6 +79,7 @@ void emit_square_level(int size, int nBit)
 			  fputc(value,out);
 			  			
 	}
+	fputc(0,out);
 	file_size+=size;
 }
 
@@ -171,7 +172,8 @@ int init(int argc, char *argv[])
 			tape_1 = 14;
 		else if (strcmp(argv[i], "-t") == 0)
 		   {
-			tape_1 = 14;
+			//tape_1 = 14;
+			printf("SQUARE WAVE!\n");
 			square = 1;
 		   }
 		
