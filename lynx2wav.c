@@ -70,7 +70,7 @@ void emit_square_level(int size, int nBit)
     int i;
 	double x, ret, val, boost;
 	int value;
-    fputc(0,out);
+    fputc(127,out);
     for (i=0;i<size-2;i++) {
 		     
 			 if (i < size/2) value = 235;
@@ -79,7 +79,7 @@ void emit_square_level(int size, int nBit)
 			  fputc(value,out);
 			  			
 	}
-	fputc(0,out);
+	fputc(127,out);
 	file_size+=size;
 }
 
